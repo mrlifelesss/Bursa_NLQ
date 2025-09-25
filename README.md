@@ -3,11 +3,11 @@
 Full-stack project for the TASE natural-language query experience. The repo bundles a Vite/React frontend and the FastAPI service that powers NLQ parsing, company/report suggestions, and DynamoDB lookups.
 
 ## Structure
-- `nlq-for-tase-announcements/` – customer-facing React app built with Vite.
-- `server.py` – FastAPI entry point that exposes `/announcements`, `/company-suggestions`, and related endpoints.
-- `nlq_parser_v5/` – reusable NLQ parsing engine and data files (aliases, prompts, etc.) shared by the backend.
-- `requirements.txt` – Python dependencies for the server plus parser package.
-- `amplify.yml` – default build specification for AWS Amplify static hosting.
+- `nlq-for-tase-announcements/` â€“ customer-facing React app built with Vite.
+- `server.py` â€“ FastAPI entry point that exposes `/announcements`, `/company-suggestions`, and related endpoints.
+- `nlq_parser_v5/` â€“ reusable NLQ parsing engine and data files (aliases, prompts, etc.) shared by the backend.
+- `requirements.txt` â€“ Python dependencies for the server plus parser package.
+- `amplify.yml` â€“ default build specification for AWS Amplify static hosting.
 
 ## Prerequisites
 - Node.js 20.x (or 18.x LTS) and npm.
@@ -23,9 +23,9 @@ npm run dev    # http://localhost:5173
 # npm run build  # production bundle in dist/
 ```
 Key env vars:
-- `VITE_BACKEND_BASE` – base URL of the FastAPI service (e.g. `https://api.example.com`).
-- `VITE_BACKEND_PROXY_TARGET` – used by `vite.config.ts` during local dev to proxy API calls (default `http://localhost:8000`).
-- `GEMINI_API_KEY` – optional; only required if you enable Gemini-powered parsing paths.
+- `VITE_BACKEND_BASE` â€“ base URL of the FastAPI service (e.g. `https://api.example.com`).
+- `VITE_BACKEND_PROXY_TARGET` â€“ used by `vite.config.ts` during local dev to proxy API calls (default `http://localhost:8000`).
+- `GEMINI_API_KEY` â€“ optional; only required if you enable Gemini-powered parsing paths.
 
 ## Backend (FastAPI + NLQ parser)
 ```bash
@@ -44,7 +44,7 @@ The server expects AWS credentials (via environment variables or profiles) with 
 - Amplify will run `npm ci` and `npm run build` inside `nlq-for-tase-announcements/` and publish the `dist/` directory.
 - If you expose the FastAPI service separately (e.g. Amplify backend, ECS, Lambda), update `VITE_BACKEND_BASE` accordingly.
 
-## Optional: LLM Parsing
+## LLM Parsing
 The parser integrates with Google Gemini when `google-genai` is installed and `GEMINI_API_KEY` is set. Without it, heuristics-only parsing remains active.
 
 ## Tips
