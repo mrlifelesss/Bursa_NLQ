@@ -1,6 +1,6 @@
 version: 1
 applications:
-  - appRoot: scripts/Bursa_NLQ          # Amplify runs everything from this subfolder
+  - appRoot: .   # run from repo root
     frontend:
       phases:
         preBuild:
