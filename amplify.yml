@@ -1,1 +1,18 @@
-version: 1\napplications:\n  - appRoot: scripts/Bursa_NLQ\n    frontend:\n      phases:\n        preBuild:\n          commands:\n            - npm ci --prefix nlq-for-tase-announcements\n        build:\n          commands:\n            - npm run build --prefix nlq-for-tase-announcements\n      artifacts:\n        baseDirectory: nlq-for-tase-announcements/dist\n        files:\n          - '**/*'\n      cache:\n        paths:\n          - nlq-for-tase-announcements/node_modules/**/*\n
+version: 1
+applications:
+  - appRoot: scripts/Bursa_NLQ          # Amplify runs everything from this subfolder
+    frontend:
+      phases:
+        preBuild:
+          commands:
+            - npm ci --prefix nlq-for-tase-announcements
+        build:
+          commands:
+            - npm run build --prefix nlq-for-tase-announcements
+      artifacts:
+        baseDirectory: nlq-for-tase-announcements/dist
+        files:
+          - '**/*'
+      cache:
+        paths:
+          - nlq-for-tase-announcements/node_modules/**/*
