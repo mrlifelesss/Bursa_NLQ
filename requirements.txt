@@ -1,0 +1,1 @@
+fastapi>=0.112,<0.116\nuvicorn[standard]>=0.30,<0.32\nboto3>=1.34,<1.36\npydantic>=2.5,<3\ndateparser>=1.2,<2\nrapidfuzz>=3.9,<4\ngoogle-genai>=1.0,<2\n# Optional fallback if RapidFuzz wheels unavailable\nthefuzz>=0.22,<0.24\n
