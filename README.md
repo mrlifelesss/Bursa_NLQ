@@ -3,11 +3,17 @@
 Full-stack project for the TASE natural-language query experience. The repo bundles a Vite/React frontend and the FastAPI service that powers NLQ parsing, company/report suggestions, and DynamoDB lookups.
 
 ## Structure
+<<<<<<< HEAD
 - `nlq-for-tase-announcements/` – customer-facing React app built with Vite.
 - `server.py` – FastAPI entry point that exposes `/announcements`, `/company-suggestions`, and related endpoints.
 - `nlq_parser_v5/` – reusable NLQ parsing engine and data files (aliases, prompts, etc.) shared by the backend.
 - `requirements.txt` – Python dependencies for the server plus parser package.
 - `amplify.yml` – default build specification for AWS Amplify static hosting.
+=======
+- `backend/` - FastAPI service and NLQ parser package (`server.py`, `nlq_parser_v5/`, Dockerfile, requirements, `.dockerignore`).
+- `nlq-for-tase-announcements/` - customer-facing React app built with Vite.
+- `amplify.yml` - default build specification for AWS Amplify static hosting.
+>>>>>>> 1eea583 (Move FastAPI backend into dedicated backend folder)
 
 ## Prerequisites
 - Node.js 20.x (or 18.x LTS) and npm.
@@ -23,19 +29,34 @@ npm run dev    # http://localhost:5173
 # npm run build  # production bundle in dist/
 ```
 Key env vars:
+<<<<<<< HEAD
 - `VITE_BACKEND_BASE` – base URL of the FastAPI service (e.g. `https://api.example.com`).
 - `VITE_BACKEND_PROXY_TARGET` – used by `vite.config.ts` during local dev to proxy API calls (default `http://localhost:8000`).
 - `GEMINI_API_KEY` – optional; only required if you enable Gemini-powered parsing paths.
+=======
+- `VITE_BACKEND_BASE` - base URL of the FastAPI service (e.g. `https://api.example.com`).
+- `VITE_BACKEND_PROXY_TARGET` - used by `vite.config.ts` during local dev to proxy API calls (default `http://localhost:8000`).
+- `GEMINI_API_KEY` - optional; only required if you enable Gemini-powered parsing paths.
+>>>>>>> 1eea583 (Move FastAPI backend into dedicated backend folder)
 
 ## Backend (FastAPI + NLQ parser)
 ```bash
-cd scripts/Bursa_NLQ
+cd scripts/Bursa_NLQ/backend
 python -m venv .venv
 . .venv/Scripts/activate   # Windows PowerShell: .venv\Scripts\Activate.ps1
 pip install -r requirements.txt
 uvicorn server:app --reload --port 8000
 ```
+Alternatively, from the repo root you can run `uvicorn backend.server:app --reload --port 8000` (ensure your virtualenv is active).
+
 The server expects AWS credentials (via environment variables or profiles) with access to DynamoDB tables referenced in `DEFAULT_QUERY_CONFIG`. Configure alternate table names or endpoints via the request payloads (`/announcements`, `/parse-build-run`).
+
+## Docker
+```bash
+docker build -t bursa-nlq-backend ./backend
+docker run --rm -p 8080:8080 bursa-nlq-backend
+```
+The Dockerfile installs dependencies from `backend/requirements.txt`, copies the backend code, exposes port 8080, and starts Uvicorn (`uvicorn server:app --host 0.0.0.0 --port 8080`).
 
 ## Deploying with AWS Amplify
 - Connect the repository in Amplify Hosting.
