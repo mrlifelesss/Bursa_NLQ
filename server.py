@@ -192,10 +192,28 @@ def smart_suggestions(q: str = Query(""), limit: int = Query(8, ge=1, le=50)):
     matches = _smart_suggestions(term, limit)
     return {"suggestions": matches}
 
-# Allow your React dev site
+# Configure CORS origins (override via CORS_ALLOW_ORIGINS env)
+DEFAULT_CORS_ALLOW_ORIGINS = (
+    "http://localhost:5173",
+    "http://127.0.0.1:5173",
+    "http://10.100.102.28:5173",
+)
+
+def _configured_cors_origins() -> List[str]:
+    raw = os.getenv("CORS_ALLOW_ORIGINS", "").strip()
+    if not raw:
+        return list(DEFAULT_CORS_ALLOW_ORIGINS)
+    if raw == "*":
+        return ["*"]
+    origins = [origin.strip() for origin in raw.split(",")]
+    filtered = [origin for origin in origins if origin]
+    return filtered or list(DEFAULT_CORS_ALLOW_ORIGINS)
+
+CORS_ALLOW_ORIGINS = _configured_cors_origins()
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173", "http://127.0.0.1:5173","http://10.100.102.28:5173"],
+    allow_origins=CORS_ALLOW_ORIGINS,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
