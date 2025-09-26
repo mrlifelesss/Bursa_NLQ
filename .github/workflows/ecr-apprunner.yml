@@ -21,7 +21,7 @@ jobs:
       # Configure AWS creds via OIDC (no long-lived secrets)
       - uses: aws-actions/configure-aws-credentials@v4
         with:
-          role-to-assume: arn:aws:iam::<YOUR_ACCOUNT_ID>:role/<GHA_ECR_PUSH_ROLE>
+          role-to-assume: arn:aws:iam::241579295267:role/GHA_ECR_PUSH_ROLE
           aws-region: ${{ env.AWS_REGION }}
 
       - uses: aws-actions/amazon-ecr-login@v2
