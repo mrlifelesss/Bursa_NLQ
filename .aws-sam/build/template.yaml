@@ -1,0 +1,79 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: Bursa_NLQ FastAPI on Lambda (HTTP API)
+Parameters:
+  StageName:
+    Type: String
+    Default: prod
+  AllowedOrigin:
+    Type: String
+    Default: https://main.dfwhu4l3em50s.amplifyapp.com
+  DynamoTableName:
+    Type: String
+    Default: ''
+Globals:
+  Function:
+    Runtime: python3.12
+    Timeout: 15
+    MemorySize: 1024
+    Architectures:
+    - x86_64
+    Environment:
+      Variables:
+        ENV: production
+        CORS_ALLOW_ORIGINS:
+          Ref: AllowedOrigin
+        ANNOUNCEMENTS_TABLE:
+          Ref: DynamoTableName
+Resources:
+  Api:
+    Type: AWS::Serverless::HttpApi
+    Properties:
+      StageName:
+        Ref: StageName
+      CorsConfiguration:
+        AllowOrigins:
+        - Ref: AllowedOrigin
+        AllowMethods:
+        - GET
+        - POST
+        - PUT
+        - DELETE
+        - OPTIONS
+        AllowHeaders:
+        - '*'
+        MaxAge: 600
+  AppFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: bursanlq-backend
+      CodeUri: AppFunction
+      Handler: server.handler
+      Events:
+        Proxy:
+          Type: HttpApi
+          Properties:
+            ApiId:
+              Ref: Api
+            Path: /{proxy+}
+            Method: ANY
+      Policies:
+      - Fn::If:
+        - HasDynamo
+        - DynamoDBReadPolicy:
+            TableName:
+              Ref: DynamoTableName
+        - Ref: AWS::NoValue
+    Metadata:
+      SamResourceId: AppFunction
+Conditions:
+  HasDynamo:
+    Fn::Not:
+    - Fn::Equals:
+      - Ref: DynamoTableName
+      - ''
+Outputs:
+  HttpApiUrl:
+    Description: Base URL for the HTTP API
+    Value:
+      Fn::Sub: https://${Api}.execute-api.${AWS::Region}.amazonaws.com/${StageName}
