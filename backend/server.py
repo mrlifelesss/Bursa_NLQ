@@ -197,6 +197,7 @@ DEFAULT_CORS_ALLOW_ORIGINS = (
     "http://localhost:5173",
     "http://127.0.0.1:5173",
     "http://10.100.102.28:5173",
+    "https://main.dfwhu4l3em50s.amplifyapp.com",
 )
 
 def _configured_cors_origins() -> List[str]:

@@ -7,3 +7,4 @@ rapidfuzz>=3.9,<4
 google-genai>=1.0,<2
 # Optional fallback if RapidFuzz wheels unavailable
 thefuzz>=0.22,<0.24
+mangum
