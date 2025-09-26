@@ -134,6 +134,7 @@ app = FastAPI()
 @app.get("/health")
 def health():
     return {"ok": True}
+handler = Mangum(app)
 
 def _company_name_suggestions(term: str, limit: int) -> List[Dict[str, str]]:
     return _suggest_from_lookup(_company_alias_lookup, term, limit)
@@ -777,4 +778,3 @@ def parse_build_run(req: ParseBuildRunReq):
         "items": _json_safe(all_items),
         "fetched": len(all_items),
     }
-handler = Mangum(app)
