@@ -30,7 +30,7 @@ jobs:
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          role-to-assume: arn:aws:iam::<YOUR_AWS_ACCOUNT_ID>:role/<YOUR_GH_OIDC_ROLE>
+          role-to-assume: arn:aws:iam::241579295267:role/github-oidc-bursa-nlq
           aws-region: ${{ env.AWS_REGION }}
 
       # Login to ECR and expose the registry URL as an output
