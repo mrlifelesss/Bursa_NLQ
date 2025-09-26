@@ -1,0 +1,14 @@
+# 1) Use the Lambda Python runtime base image
+FROM public.ecr.aws/lambda/python:3.12
+
+# 2) Copy and install dependencies
+#    If your requirements filename differs, adjust here.
+COPY backend/requirements.txt  ${LAMBDA_TASK_ROOT}/requirements.txt
+RUN pip install --no-cache-dir -r ${LAMBDA_TASK_ROOT}/requirements.txt
+
+# 3) Copy app code into the Lambda task root
+COPY backend/ ${LAMBDA_TASK_ROOT}/
+
+# 4) Set the handler: module.function
+#    server.py must contain:  handler = Mangum(app)
+CMD ["server.handler"]
