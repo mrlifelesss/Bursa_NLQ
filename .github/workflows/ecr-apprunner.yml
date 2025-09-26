@@ -14,7 +14,7 @@ jobs:
     env:
       AWS_REGION: us-east-1                # <-- your region
       ECR_REPO: bursa-nlq-backend          # <-- your ECR repo name (lowercase)
-      IMAGE_TAG: latest                    # App Runner can track :latest
+      IMAGE_TAG: v1                    # App Runner can track :latest
     steps:
       - uses: actions/checkout@v4
 
