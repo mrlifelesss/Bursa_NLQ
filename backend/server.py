@@ -134,7 +134,8 @@ app = FastAPI()
 @app.get("/health")
 def health():
     return {"ok": True}
-handler = Mangum(app)
+
+handler = Mangum(app)  # THis is what lambda is looking for
 
 def _company_name_suggestions(term: str, limit: int) -> List[Dict[str, str]]:
     return _suggest_from_lookup(_company_alias_lookup, term, limit)
