@@ -175,6 +175,24 @@ def _smart_suggestions(term: str, limit: int) -> List[Dict[str, str]]:
                 break
     return results
 
+def _err_msg(e: Exception) -> str:
+    # boto3/ClientError has a rich response; fall back to str(e)
+    if isinstance(e, ClientError):
+        err = e.response.get("Error", {})
+        code = err.get("Code")
+        msg = err.get("Message")
+        return f"{code}: {msg}" if code and msg else (msg or str(e))
+    # Some boto3 errors are plain exceptions with .response dict
+    resp = getattr(e, "response", None) or {}
+    if isinstance(resp, dict):
+        err = resp.get("Error", {})
+        if isinstance(err, dict) and ("Code" in err or "Message" in err):
+            code = err.get("Code")
+            msg = err.get("Message")
+            return f"{code}: {msg}" if code and msg else (msg or str(e))
+    return str(e)
+
+
 @app.get("/company-suggestions")
 def company_suggestions(q: str = Query(""), limit: int = Query(8, ge=1, le=50)):
     term = (q or "").strip()
@@ -627,12 +645,21 @@ def run_queries(req: RunReq):
 
 @app.post("/announcements")
 def announcements(req: AnnouncementsReq):
-    run_result = run_queries(req)
+    # ---- wrap the DynamoDB work so we see the true cause on 500
+    try:
+        run_result = run_queries(req)     # <- likely where DynamoDB is called
+    except Exception as e:
+        msg = _err_msg(e)
+        log.exception("announcements: run_queries failed: %s", msg)
+        # Surface the exact reason to help debug from the browser/CloudWatch
+        raise HTTPException(status_code=500, detail=msg)
+
     parsed_payload = run_result.get("parsed") or {}
     try:
         parsed = QueryParseResult.model_validate(parsed_payload)
     except Exception:
         parsed = QueryParseResult()
+
     items = run_result.get("items") or []
     mapped_items = [
         _map_item_to_data_item(item, idx)
