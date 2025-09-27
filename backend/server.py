@@ -11,6 +11,7 @@ from datetime import date, datetime
 import re, unicodedata
 import json
 from mangum import Mangum
+from botocore.exceptions import ClientError
 
 try:
     import boto3  # noqa: F401
