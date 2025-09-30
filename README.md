@@ -3,7 +3,6 @@
 Full-stack project for the TASE natural-language query experience. The repo bundles a Vite/React frontend and the FastAPI service that powers NLQ parsing, company/report suggestions, and DynamoDB lookups.
 
 ## Structure
-<<<<<<< HEAD
 - `nlq-for-tase-announcements/` – customer-facing React app built with Vite.
 - `server.py` – FastAPI entry point that exposes `/announcements`, `/company-suggestions`, and related endpoints.
 - `nlq_parser_v5/` – reusable NLQ parsing engine and data files (aliases, prompts, etc.) shared by the backend.
@@ -13,7 +12,6 @@ Full-stack project for the TASE natural-language query experience. The repo bund
 - `backend/` - FastAPI service and NLQ parser package (`server.py`, `nlq_parser_v5/`, Dockerfile, requirements, `.dockerignore`).
 - `nlq-for-tase-announcements/` - customer-facing React app built with Vite.
 - `amplify.yml` - default build specification for AWS Amplify static hosting.
->>>>>>> 1eea583 (Move FastAPI backend into dedicated backend folder)
 
 ## Prerequisites
 - Node.js 20.x (or 18.x LTS) and npm.
@@ -29,15 +27,13 @@ npm run dev    # http://localhost:5173
 # npm run build  # production bundle in dist/
 ```
 Key env vars:
-<<<<<<< HEAD
 - `VITE_BACKEND_BASE` – base URL of the FastAPI service (e.g. `https://api.example.com`).
 - `VITE_BACKEND_PROXY_TARGET` – used by `vite.config.ts` during local dev to proxy API calls (default `http://localhost:8000`).
 - `GEMINI_API_KEY` – optional; only required if you enable Gemini-powered parsing paths.
 =======
 - `VITE_BACKEND_BASE` - base URL of the FastAPI service (e.g. `https://api.example.com`).
 - `VITE_BACKEND_PROXY_TARGET` - used by `vite.config.ts` during local dev to proxy API calls (default `http://localhost:8000`).
-- `GEMINI_API_KEY` - optional; only required if you enable Gemini-powered parsing paths.
->>>>>>> 1eea583 (Move FastAPI backend into dedicated backend folder)
+- `GEMINI_API_KEY` - ; only required if you enable Gemini-powered parsing paths.
 
 ## Backend (FastAPI + NLQ parser)
 ```bash
