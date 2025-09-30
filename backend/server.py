@@ -8,6 +8,7 @@ from typing import Any, Dict, Iterable, List, Literal, Optional, Tuple
 from decimal import Decimal
 from copy import deepcopy
 from datetime import date, datetime
+from functools import lru_cache
 import re, unicodedata
 import json
 from mangum import Mangum
@@ -17,6 +18,13 @@ try:
     import boto3  # noqa: F401
 except ImportError:
     raise HTTPException(status_code=500, detail="boto3 is not installed. pip install boto3")
+
+try:
+    import requests  # noqa: F401
+    from requests import RequestException
+except ImportError:
+    requests = None  # type: ignore[assignment]
+    RequestException = Exception  # type: ignore[assignment]
 
 SCRIPT_DIR = Path(__file__).resolve().parent
 if str(SCRIPT_DIR) not in sys.path:
@@ -137,6 +145,113 @@ def health():
     return {"ok": True}
 
 handler = Mangum(app)  # THis is what lambda is looking for
+
+DEFAULT_API_URL_PARAMETER = "/myapp/api/url"
+DEFAULT_API_KEY_PARAMETER = "/myapp/api/key"
+
+_api_url_param_env = os.getenv("EXTERNAL_API_URL_PARAMETER")
+if _api_url_param_env:
+    API_URL_PARAMETER_NAME = _api_url_param_env.strip() or DEFAULT_API_URL_PARAMETER
+else:
+    API_URL_PARAMETER_NAME = DEFAULT_API_URL_PARAMETER
+
+_api_key_param_env = os.getenv("EXTERNAL_API_KEY_PARAMETER")
+if _api_key_param_env is None:
+    API_KEY_PARAMETER_NAME = DEFAULT_API_KEY_PARAMETER
+else:
+    API_KEY_PARAMETER_NAME = _api_key_param_env.strip()
+
+try:
+    API_TIMEOUT_SECONDS = float(os.getenv("EXTERNAL_API_TIMEOUT_SECONDS", "10"))
+    if API_TIMEOUT_SECONDS <= 0:
+        API_TIMEOUT_SECONDS = 10.0
+except ValueError:
+    API_TIMEOUT_SECONDS = 10.0
+
+@lru_cache(maxsize=32)
+def _api_config_from_parameter_store(
+    url_parameter_name: str,
+    key_parameter_name: Optional[str],
+    profile_name: Optional[str],
+    region_name: Optional[str],
+) -> Tuple[str, Optional[str]]:
+    session = boto3.session.Session(profile_name=profile_name or None, region_name=region_name or None)
+    ssm = session.client("ssm")
+    try:
+        url_resp = ssm.get_parameter(Name=url_parameter_name)
+    except ClientError as exc:
+        raise HTTPException(status_code=500, detail=f"Failed to load API url from Parameter Store: {_err_msg(exc)}") from exc
+
+    parameter_details = url_resp.get("Parameter") or {}
+    url_value = (parameter_details.get("Value") or "").strip()
+    if not url_value:
+        raise HTTPException(status_code=500, detail=f"Parameter {url_parameter_name} did not return a value.")
+
+    api_key_value: Optional[str] = None
+    resolved_key_name = (key_parameter_name or "").strip()
+    if resolved_key_name:
+        try:
+            key_resp = ssm.get_parameter(Name=resolved_key_name, WithDecryption=True)
+        except ClientError as exc:
+            raise HTTPException(status_code=500, detail=f"Failed to load API key from Parameter Store: {_err_msg(exc)}") from exc
+        key_details = key_resp.get("Parameter") or {}
+        api_key_value = key_details.get("Value")
+        if api_key_value is None:
+            raise HTTPException(status_code=500, detail=f"Parameter {resolved_key_name} did not return a value.")
+
+    return url_value, api_key_value
+
+def call_parameter_store_api(
+    payload: Dict[str, Any],
+    *,
+    url_parameter_name: Optional[str] = None,
+    key_parameter_name: Optional[str] = None,
+    aws_profile: Optional[str] = None,
+    aws_region: Optional[str] = None,
+    timeout_seconds: Optional[float] = None,
+    extra_headers: Optional[Dict[str, str]] = None,
+) -> Any:
+    if requests is None:
+        raise HTTPException(status_code=500, detail="requests is not installed. pip install requests")
+
+    resolved_url_name = (url_parameter_name or API_URL_PARAMETER_NAME).strip()
+    if not resolved_url_name:
+        raise HTTPException(status_code=500, detail="API URL parameter name is not configured.")
+
+    resolved_key_name = key_parameter_name
+    if resolved_key_name is None:
+        resolved_key_name = API_KEY_PARAMETER_NAME
+
+    resolved_key_name = (resolved_key_name or "").strip() or None
+
+    url_value, api_key_value = _api_config_from_parameter_store(
+        resolved_url_name,
+        resolved_key_name,
+        aws_profile,
+        aws_region,
+    )
+
+    headers: Dict[str, str] = {"Content-Type": "application/json"}
+    if extra_headers:
+        headers.update(extra_headers)
+
+    if api_key_value:
+        existing = {key.lower() for key in headers}
+        if "x-api-key" not in existing:
+            headers["x-api-key"] = api_key_value
+
+    effective_timeout = API_TIMEOUT_SECONDS if not timeout_seconds or timeout_seconds <= 0 else timeout_seconds
+
+    try:
+        response = requests.post(url_value, json=payload, headers=headers, timeout=effective_timeout)
+        response.raise_for_status()
+    except RequestException as exc:
+        raise HTTPException(status_code=502, detail=f"Failed to call downstream API: {exc}") from exc
+
+    try:
+        return response.json()
+    except ValueError:
+        return {"raw": response.text}
 
 def _company_name_suggestions(term: str, limit: int) -> List[Dict[str, str]]:
     return _suggest_from_lookup(_company_alias_lookup, term, limit)
@@ -384,7 +499,8 @@ def _map_item_to_data_item(item: Dict[str, Any], idx: int) -> Dict[str, Any]:
         or _coerce_str(item.get('company_name_en'))
         or 'Unknown'
     )
-    raw_type = item.get('form_type') or item.get('formType') or item.get('events') or item.get('report_type')
+    #raw_type = item.get('form_type') or item.get('formType') or item.get('events') or item.get('report_type')
+    raw_type = item.get('events') or item.get('report_type')
     if isinstance(raw_type, dict):
         raw_type = ', '.join(key for key, value in raw_type.items() if value)
     elif isinstance(raw_type, Iterable) and not isinstance(raw_type, (str, bytes)):
