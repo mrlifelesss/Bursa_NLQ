@@ -1,0 +1,14 @@
+FROM public.ecr.aws/lambda/python:3.12
+
+# Copy requirements and install
+COPY backend/requirements.txt  ${LAMBDA_TASK_ROOT}/requirements.txt
+RUN pip install --no-cache-dir -r ${LAMBDA_TASK_ROOT}/requirements.txt
+
+# Copy app code
+COPY backend/ ${LAMBDA_TASK_ROOT}/
+
+# The handler must exist in backend/server.py
+# server.py should end with:
+#   from mangum import Mangum
+#   handler = Mangum(app)
+CMD ["server.handler"]

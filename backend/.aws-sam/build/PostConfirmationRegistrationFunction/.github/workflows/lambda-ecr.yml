@@ -1,0 +1,77 @@
+name: Build & Deploy Lambda (ECR image)
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'backend/**'
+      - '.github/workflows/lambda-ecr.yml'
+
+permissions:
+  id-token: write      # for OIDC to AWS
+  contents: read
+
+env:
+  AWS_REGION: us-east-1
+  ECR_REPO: bursa-nlq-backend      # <-- your ECR repo for the LAMBDA image
+  LAMBDA_FUNCTION: bursanlq-backend       # <-- your Lambda function name
+  DOCKERFILE: backend/Dockerfile.lambda
+  CONTEXT: .                              # build context (repo root)
+
+jobs:
+  build-push-update:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # Configure AWS creds using your OIDC role (replace the ARN)
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::241579295267:role/github-oidc-bursa-nlq
+          aws-region: ${{ env.AWS_REGION }}
+
+      # Login to ECR and expose the registry URL as an output
+      - name: Login to Amazon ECR
+        id: ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Compute image tag
+        run: |
+          echo "IMAGE_TAG=gh-${GITHUB_SHA::7}" >> $GITHUB_ENV
+          echo "REGISTRY=${{ steps.ecr.outputs.registry }}" >> $GITHUB_ENV
+
+      # Build & push the Lambda image (Lambda base image must be used in Dockerfile.lambda)
+      - name: Build and push image
+        uses: docker/build-push-action@v5
+        with:
+          context: ${{ env.CONTEXT }}
+          file: ${{ env.DOCKERFILE }}
+          push: true
+          platforms: linux/amd64
+          tags: ${{ env.REGISTRY }}/${{ env.ECR_REPO }}:${{ env.IMAGE_TAG }}
+
+      # Resolve the tag to a digest (safer than floating tags)
+      - name: Get image digest
+        id: digest
+        run: |
+          DIGEST=$(aws ecr describe-images \
+            --repository-name "$ECR_REPO" \
+            --image-ids imageTag="${IMAGE_TAG}" \
+            --query 'imageDetails[0].imageDigest' \
+            --output text)
+          echo "digest=$DIGEST" >> $GITHUB_OUTPUT
+
+      # Update Lambda to the new image (by digest)
+      - name: Update Lambda function code
+        run: |
+          aws lambda update-function-code \
+            --function-name "$LAMBDA_FUNCTION" \
+            --image-uri "${REGISTRY}/${ECR_REPO}@${{ steps.digest.outputs.digest }}"
+          aws lambda wait function-updated --function-name "$LAMBDA_FUNCTION"
+
+      # Optional: smoke test via API Gateway or Function URL
+      # - name: Smoke test
+      #   run: curl -fsS "${{ secrets.API_BASE }}/health" && echo "OK"
