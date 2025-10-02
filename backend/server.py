@@ -1,7 +1,7 @@
 from pathlib import Path
 import os
 import sys
-from fastapi import FastAPI, HTTPException, Query
+from fastapi import FastAPI, HTTPException, Query, Response
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from typing import Any, Dict, Iterable, List, Literal, Optional, Tuple
@@ -140,12 +140,11 @@ except Exception as e:
 
 app = FastAPI()
 
-ALLOWED_ORIGINS = ["https://main.dfwhu4l3em50s.amplifyapp.com"]
 app.add_middleware(
     CORSMiddleware,
     allow_origins=ALLOWED_ORIGINS,
-    allow_methods=["*"],
-    allow_headers=["content-type"],
+    allow_methods=["GET","POST","OPTIONS"],
+    allow_headers=["*"],          # match API GW for safety
     allow_credentials=False,
 )
 
@@ -155,11 +154,12 @@ def cors_preflight(path: str):
         status_code=204,
         headers={
             "Access-Control-Allow-Origin": ALLOWED_ORIGINS[0],
-            "Access-Control-Allow-Methods": "*",
-            "Access-Control-Allow-Headers": "content-type",
+            "Access-Control-Allow-Methods": "GET,POST,OPTIONS",
+            "Access-Control-Allow-Headers": "*",
             "Access-Control-Max-Age": "600",
         },
     )
+
 @app.get("/health")
 def health():
     return {"ok": True}
