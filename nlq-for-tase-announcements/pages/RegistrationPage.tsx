@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import type { Page } from '../App';
 import type { Language, Translation, Plan } from '../i18n/locales';
 import { CheckIcon, CreditCardIcon, GoogleIcon, FacebookIcon } from '../components/Icons';
+import { signUpWithCognito } from '../services/authService';
 
 interface RegistrationPageProps {
   onNavigate: (page: Page) => void;
@@ -19,17 +20,36 @@ const RegistrationPage: React.FC<RegistrationPageProps> = ({ onNavigate, lang, t
     expiryDate: '',
     cvc: '',
   });
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState(false);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log('Form submitted:', { planId: plan.id, ...formData });
-    // Simulate successful registration and navigate to the product
-    onNavigate('product');
+    if (submitting) return;
+    setSubmitting(true);
+    setError(null);
+
+    try {
+      await signUpWithCognito({
+        email: formData.email.trim(),
+        password: formData.password,
+        name: formData.name.trim(),
+      });
+      setSuccess(true);
+      onNavigate('product');
+    } catch (err) {
+      console.error('Failed to sign up with Cognito', err);
+      const message = err instanceof Error ? err.message : 'Registration failed. Please try again.';
+      setError(message);
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   const isPaidPlan = plan.id !== 'basic';
@@ -38,7 +58,6 @@ const RegistrationPage: React.FC<RegistrationPageProps> = ({ onNavigate, lang, t
   const marginEnd = lang === 'he' ? 'ml-4' : 'mr-4';
   const formSectionOrder = lang === 'he' ? 'md:order-last' : '';
   const summarySectionOrder = lang === 'he' ? 'md:order-first' : '';
-
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 md:py-16">
@@ -52,11 +71,11 @@ const RegistrationPage: React.FC<RegistrationPageProps> = ({ onNavigate, lang, t
           
           {/* Social Logins */}
           <div className="space-y-4">
-            <button className="w-full flex items-center justify-center gap-3 py-3 px-4 rounded-lg font-bold transition-colors bg-white text-gray-800 hover:bg-gray-200">
+            <button type="button" className="w-full flex items-center justify-center gap-3 py-3 px-4 rounded-lg font-bold transition-colors bg-white text-gray-800 hover:bg-gray-200">
               <GoogleIcon className="h-6 w-6" />
               <span>{t.continueWithGoogle}</span>
             </button>
-            <button className="w-full flex items-center justify-center gap-3 py-3 px-4 rounded-lg font-bold transition-colors bg-[#1877F2] text-white hover:bg-[#166fe5]">
+            <button type="button" className="w-full flex items-center justify-center gap-3 py-3 px-4 rounded-lg font-bold transition-colors bg-[#1877F2] text-white hover:bg-[#166fe5]">
               <FacebookIcon className="h-6 w-6" />
               <span>{t.continueWithFacebook}</span>
             </button>
@@ -70,6 +89,16 @@ const RegistrationPage: React.FC<RegistrationPageProps> = ({ onNavigate, lang, t
           </div>
 
           <h2 className={`text-2xl font-bold text-cyan-400 mb-6 ${textAlign}`}>{t.formTitle}</h2>
+          {error && (
+            <div className="mb-4 rounded-md border border-red-500 bg-red-500/10 px-4 py-3 text-sm text-red-200">
+              {error}
+            </div>
+          )}
+          {success && (
+            <div className="mb-4 rounded-md border border-cyan-500 bg-cyan-500/10 px-4 py-3 text-sm text-cyan-200">
+              {t.successMessage ?? 'Registration successful! Please check your email to confirm your account.'}
+            </div>
+          )}
           <form onSubmit={handleSubmit} className="space-y-6">
             <div>
               <label htmlFor="name" className={`block text-sm font-medium text-gray-300 mb-2 ${textAlign}`}>{t.nameLabel}</label>
@@ -112,7 +141,13 @@ const RegistrationPage: React.FC<RegistrationPageProps> = ({ onNavigate, lang, t
             )}
             
             <div>
-              <button type="submit" className="w-full bg-cyan-500 text-white hover:bg-cyan-600 py-3 px-6 rounded-lg font-bold transition-colors">{t.submitButton}</button>
+              <button
+                type="submit"
+                disabled={submitting}
+                className={`w-full bg-cyan-500 text-white hover:bg-cyan-600 py-3 px-6 rounded-lg font-bold transition-colors ${submitting ? 'opacity-60 cursor-not-allowed' : ''}`}
+              >
+                {submitting ? t.submittingLabel ?? 'Registering…' : t.submitButton}
+              </button>
             </div>
             <p className={`text-xs text-gray-500 text-center`} dangerouslySetInnerHTML={{ __html: t.terms }} />
           </form>
