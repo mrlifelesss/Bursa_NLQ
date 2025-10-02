@@ -139,6 +139,7 @@ except Exception as e:
     raise HTTPException(status_code=500, detail=f"Failed to load aliases: {e}")
 
 app = FastAPI()
+ALLOWED_ORIGINS = ["https://main.dfwhu4l3em50s.amplifyapp.com"]
 
 app.add_middleware(
     CORSMiddleware,
