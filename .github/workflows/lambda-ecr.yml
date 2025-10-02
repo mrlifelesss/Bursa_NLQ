@@ -54,15 +54,13 @@ jobs:
 
       - name: Resolve digest for the pushed tag
         id: digest
+        shell: bash
         run: |
-          DIGEST=$(aws ecr describe-images \
-            --repository-name "${{ env.LAMBDA_REPO }}" \
-            --image-ids imageTag=gh-${{ steps.tag.outputs.short }} \
-            --query 'imageDetails[0].imageDigest' --output text)
-            --repository-name "${{ env.LAMBDA_REPO }}" \
-            --image-ids imageTag=gh-${{ steps.tag.outputs.short }} \
-            --query 'imageDetails[0].imageDigest' --output text)
-          echo "digest=$DIGEST" >> $GITHUB_OUTPUT
+          set -euo pipefail
+          TAG="gh-${{ steps.tag.outputs.short }}"
+          DIGEST=$(aws ecr describe-images --repository-name "${{ env.LAMBDA_REPO }}" --image-ids imageTag="$TAG" --query 'imageDetails[0].imageDigest' --output text)
+          echo "Resolved digest: $DIGEST"
+          echo "digest=$DIGEST" >> "$GITHUB_OUTPUT"
 
       - name: Update Lambda to new image & publish version
         id: updlambda
