@@ -140,6 +140,26 @@ except Exception as e:
 
 app = FastAPI()
 
+ALLOWED_ORIGINS = ["https://main.dfwhu4l3em50s.amplifyapp.com"]
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=ALLOWED_ORIGINS,
+    allow_methods=["*"],
+    allow_headers=["content-type"],
+    allow_credentials=False,
+)
+
+@app.options("/{path:path}")
+def cors_preflight(path: str):
+    return Response(
+        status_code=204,
+        headers={
+            "Access-Control-Allow-Origin": ALLOWED_ORIGINS[0],
+            "Access-Control-Allow-Methods": "*",
+            "Access-Control-Allow-Headers": "content-type",
+            "Access-Control-Max-Age": "600",
+        },
+    )
 @app.get("/health")
 def health():
     return {"ok": True}
@@ -353,13 +373,6 @@ def _configured_cors_origins() -> List[str]:
 
 CORS_ALLOW_ORIGINS = _configured_cors_origins()
 
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=CORS_ALLOW_ORIGINS,
-    allow_credentials=False,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
 
 def _json_safe(value: Any) -> Any:
     """Convert Decimal and nested types to JSON-friendly values."""
