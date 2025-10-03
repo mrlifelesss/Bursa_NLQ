@@ -6,7 +6,7 @@ import { ENABLE_REGISTRATION_GATING } from '../config';
 
 interface HeaderProps {
   currentPage: Page;
-  onNavigate: (page: Page) => void;
+  onNavigate: (page: Page, options?: { planId?: string; email?: string }) => void;
   lang: Language;
   setLang: (lang: Language) => void;
   t: Translation['header'];
@@ -48,7 +48,7 @@ export const Header: React.FC<HeaderProps> = ({ currentPage, onNavigate, lang, s
         onClick={() => setLang('he')} 
         className={`px-2 py-1 rounded-md ${lang === 'he' ? 'text-cyan-400' : 'hover:text-white'}`}
       >
-        òáøéú
+        ×¢×‘×¨×™×ª
       </button>
     </div>
   );

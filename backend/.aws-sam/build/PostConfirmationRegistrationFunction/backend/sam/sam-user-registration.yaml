@@ -88,7 +88,7 @@ Resources:
     Properties:
       FunctionName: !Sub "${AWS::StackName}-${StackNameSuffix}-post-confirmation"
       CodeUri: ../..
-      Handler: user_registration/lambdas/post_confirmation.lambda_handler
+      Handler: backend.user_registration.lambdas.post_confirmation.lambda_handler
       Environment:
         Variables:
           USERS_TABLE_NAME: !Ref UsersTable

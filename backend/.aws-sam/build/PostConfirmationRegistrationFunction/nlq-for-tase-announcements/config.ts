@@ -1,2 +1,1 @@
-export const ENABLE_REGISTRATION_GATING = false;
-
+export const ENABLE_REGISTRATION_GATING = true;

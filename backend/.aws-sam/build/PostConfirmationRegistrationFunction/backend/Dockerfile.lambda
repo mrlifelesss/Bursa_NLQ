@@ -1,14 +1,13 @@
+# backend/Dockerfile.lambda
 FROM public.ecr.aws/lambda/python:3.12
+WORKDIR ${LAMBDA_TASK_ROOT}
 
-# Copy requirements and install
-COPY backend/requirements.txt  ${LAMBDA_TASK_ROOT}/requirements.txt
-RUN pip install --no-cache-dir -r ${LAMBDA_TASK_ROOT}/requirements.txt
+# 1) Install dependencies (requirements.txt is in backend/)
+COPY backend/requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy app code
+# 2) Copy the entire backend/ (code + JSON files) into /var/task
 COPY backend/ ${LAMBDA_TASK_ROOT}/
 
-# The handler must exist in backend/server.py
-# server.py should end with:
-#   from mangum import Mangum
-#   handler = Mangum(app)
+# 3) Lambda entrypoint – server.py must define: handler = Mangum(app)
 CMD ["server.handler"]

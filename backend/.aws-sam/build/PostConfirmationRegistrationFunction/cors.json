@@ -1,0 +1,7 @@
+{
+  "AllowOrigins": ["https://main.dfwhu4l3em50s.amplifyapp.com"],
+  "AllowMethods": ["GET","POST","OPTIONS"],
+  "AllowHeaders": ["*"],
+  "MaxAge": 600,
+  "AllowCredentials": false
+}
