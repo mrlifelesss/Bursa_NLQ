@@ -5,7 +5,7 @@ import { CheckIcon, CreditCardIcon, GoogleIcon, FacebookIcon } from '../componen
 import { signUpWithCognito } from '../services/authService';
 
 interface RegistrationPageProps {
-  onNavigate: (page: Page) => void;
+  onNavigate: (page: Page, options?: { planId?: string; email?: string }) => void;
   lang: Language;
   t: Translation['registration'];
   plan: Plan;
@@ -22,7 +22,6 @@ const RegistrationPage: React.FC<RegistrationPageProps> = ({ onNavigate, lang, t
   });
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState(false);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -41,8 +40,7 @@ const RegistrationPage: React.FC<RegistrationPageProps> = ({ onNavigate, lang, t
         password: formData.password,
         name: formData.name.trim(),
       });
-      setSuccess(true);
-      onNavigate('product');
+      onNavigate('confirm', { email: formData.email.trim() });
     } catch (err) {
       console.error('Failed to sign up with Cognito', err);
       const message = err instanceof Error ? err.message : 'Registration failed. Please try again.';
@@ -94,11 +92,6 @@ const RegistrationPage: React.FC<RegistrationPageProps> = ({ onNavigate, lang, t
               {error}
             </div>
           )}
-          {success && (
-            <div className="mb-4 rounded-md border border-cyan-500 bg-cyan-500/10 px-4 py-3 text-sm text-cyan-200">
-              {t.successMessage ?? 'Registration successful! Please check your email to confirm your account.'}
-            </div>
-          )}
           <form onSubmit={handleSubmit} className="space-y-6">
             <div>
               <label htmlFor="name" className={`block text-sm font-medium text-gray-300 mb-2 ${textAlign}`}>{t.nameLabel}</label>
@@ -146,7 +139,7 @@ const RegistrationPage: React.FC<RegistrationPageProps> = ({ onNavigate, lang, t
                 disabled={submitting}
                 className={`w-full bg-cyan-500 text-white hover:bg-cyan-600 py-3 px-6 rounded-lg font-bold transition-colors ${submitting ? 'opacity-60 cursor-not-allowed' : ''}`}
               >
-                {submitting ? t.submittingLabel ?? 'Registering…' : t.submitButton}
+                {submitting ? (t.submittingLabel ?? 'Registering…') : t.submitButton}
               </button>
             </div>
             <p className={`text-xs text-gray-500 text-center`} dangerouslySetInnerHTML={{ __html: t.terms }} />

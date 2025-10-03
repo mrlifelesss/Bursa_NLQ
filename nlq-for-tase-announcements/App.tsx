@@ -7,14 +7,21 @@ import AboutPage from './pages/AboutPage';
 import ContactPage from './pages/ContactPage';
 import RegistrationPage from './pages/RegistrationPage';
 import LoginPage from './pages/LoginPage';
+import ConfirmPage from './pages/ConfirmPage';
 import { locales, Language, Plan } from './i18n/locales';
 
-export type Page = 'landing' | 'product' | 'pricing' | 'about' | 'contact' | 'registration' | 'login';
+export type Page = 'landing' | 'product' | 'pricing' | 'about' | 'contact' | 'registration' | 'login' | 'confirm';
+
+type NavigationOptions = {
+  planId?: string;
+  email?: string;
+};
 
 const App: React.FC = () => {
   const [currentPage, setCurrentPage] = useState<Page>('landing');
   const [language, setLanguage] = useState<Language>('he');
   const [selectedPlanId, setSelectedPlanId] = useState<string | null>(null);
+  const [pendingEmail, setPendingEmail] = useState<string | null>(null);
 
   useEffect(() => {
     document.documentElement.lang = language;
@@ -23,10 +30,19 @@ const App: React.FC = () => {
 
   const t = locales[language];
 
-  const handleNavigate = (page: Page, planId?: string) => {
-    if (page === 'registration' && planId) {
-      setSelectedPlanId(planId);
+  const handleNavigate = (page: Page, options?: NavigationOptions) => {
+    if (options?.planId) {
+      setSelectedPlanId(options.planId);
+    } else if (page !== 'registration') {
+      setSelectedPlanId(null);
     }
+
+    if (options?.email) {
+      setPendingEmail(options.email);
+    } else if (page !== 'confirm') {
+      setPendingEmail(null);
+    }
+
     setCurrentPage(page);
   };
 
@@ -43,12 +59,20 @@ const App: React.FC = () => {
       />
       {currentPage === 'landing' && <LandingPage onNavigate={handleNavigate} lang={language} t={t} />}
       {currentPage === 'product' && <MainAppPage lang={language} t={t} />}
-      {currentPage === 'pricing' && <PricingPage lang={language} t={t.pricing} onPlanSelect={(planId) => handleNavigate('registration', planId)} />}
+      {currentPage === 'pricing' && <PricingPage lang={language} t={t.pricing} onPlanSelect={(planId) => handleNavigate('registration', { planId })} />}
       {currentPage === 'about' && <AboutPage onNavigate={handleNavigate} lang={language} t={t.about} />}
       {currentPage === 'contact' && <ContactPage lang={language} t={t.contact} />}
       {currentPage === 'login' && <LoginPage onNavigate={handleNavigate} lang={language} t={t.login} />}
       {currentPage === 'registration' && selectedPlan && (
         <RegistrationPage onNavigate={handleNavigate} lang={language} t={t.registration} plan={selectedPlan} />
+      )}
+      {currentPage === 'confirm' && (
+        <ConfirmPage
+          onNavigate={handleNavigate}
+          lang={language}
+          t={t.confirmation}
+          email={pendingEmail}
+        />
       )}
     </div>
   );
