@@ -1,6 +1,6 @@
 from pathlib import Path
 import os
-import sys
+import sys, logging
 from fastapi import FastAPI, HTTPException, Query, Response
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
@@ -38,8 +38,8 @@ from nlq_parser_v5 import (
     build_single_query_string,
     BuiltQuery,
 )
-from nlq_parser_v5.text_utils import _load_aliases_from_json
 
+log = logging.getLogger(__name__)
 
 def _build_alias_lookup(alias_map: Dict[str, List[str]]) -> List[Tuple[str, str]]:
     """Flatten {canonical: [aliases]} into [(alias, canonical)], dedup on normalized alias."""
@@ -128,15 +128,23 @@ def _suggest_from_lookup(lookup: List[Tuple[str, str]], term: str, limit: int) -
 
 #Run as uvicorn scripts.server:app --reload --port 8000
 #  
-# Load aliases exactly like your Streamlit app
-package_dir = SCRIPT_DIR / "nlq_parser_v5"
-try:
-    company_aliases = _load_aliases_from_json(package_dir / "company_aliases.json")
-    report_aliases  = _load_aliases_from_json(package_dir / "announcement_aliases.json")
-    _company_alias_lookup = _build_alias_lookup(company_aliases)
-    _report_alias_lookup = _build_alias_lookup(report_aliases)
-except Exception as e:
-    raise HTTPException(status_code=500, detail=f"Failed to load aliases: {e}")
+PACKAGE_DIR = SCRIPT_DIR / "nlq_parser_v5"
+
+@lru_cache(maxsize=1)
+def load_aliases() -> Tuple[Dict[str, List[str]], Dict[str, List[str]]]:
+    from nlq_parser_v5.text_utils import _load_aliases_from_json
+    try:
+        company = _load_aliases_from_json(PACKAGE_DIR / "company_aliases.json")
+        report  = _load_aliases_from_json(PACKAGE_DIR / "announcement_aliases.json")
+        return company, report
+    except Exception as e:
+        log.exception("Alias load failed: %s", e)
+        raise HTTPException(status_code=500, detail=f"Failed to load aliases: {e}")
+
+@lru_cache(maxsize=1)
+def load_alias_lookups() -> Tuple[List[Tuple[str, str]], List[Tuple[str, str]]]:
+    company_aliases, report_aliases = load_aliases()
+    return _build_alias_lookup(company_aliases), _build_alias_lookup(report_aliases)
 
 app = FastAPI()
 ALLOWED_ORIGINS = ["https://main.dfwhu4l3em50s.amplifyapp.com"]
@@ -275,10 +283,12 @@ def call_parameter_store_api(
         return {"raw": response.text}
 
 def _company_name_suggestions(term: str, limit: int) -> List[Dict[str, str]]:
-    return _suggest_from_lookup(_company_alias_lookup, term, limit)
+    company_lookup, _ = load_alias_lookups()
+    return _suggest_from_lookup(company_lookup, term, limit)
 
 def _report_type_suggestions(term: str, limit: int) -> List[Dict[str, str]]:
-    return _suggest_from_lookup(_report_alias_lookup, term, limit)
+    _, report_lookup = load_alias_lookups()
+    return _suggest_from_lookup(report_lookup, term, limit)
 
 def _smart_suggestions(term: str, limit: int) -> List[Dict[str, str]]:
     results: List[Dict[str, str]] = []
@@ -604,6 +614,7 @@ def parse(req: ParseReq):
     # mimic Streamlit env override
     if req.test_today:
         os.environ["NLQ_TEST_TODAY"] = req.test_today
+    company_aliases, report_aliases = load_aliases()
     result = parse_nlq(
         req.query,
         company_aliases,
@@ -617,6 +628,7 @@ def parse(req: ParseReq):
 def extract_filters(req: ParseReq):
     if req.test_today:
         os.environ["NLQ_TEST_TODAY"] = req.test_today
+    company_aliases, report_aliases = load_aliases()
     parsed = parse_nlq(
         req.query,
         company_aliases,
@@ -637,6 +649,7 @@ def build_queries(req: QueryReq):
         os.environ["NLQ_TEST_TODAY"] = req.test_today
 
     # 1) parse
+    company_aliases, report_aliases = load_aliases()
     parsed = parse_nlq(
         req.query,
         company_aliases,
@@ -682,6 +695,7 @@ def run_queries(req: RunReq):
         os.environ["NLQ_TEST_TODAY"] = req.test_today
 
     # 1) parse
+    company_aliases, report_aliases = load_aliases()
     parsed = parse_nlq(
         req.query,
         company_aliases,
@@ -813,6 +827,7 @@ def announcements(req: AnnouncementsReq):
 @app.post("/parse-build-run")
 def parse_build_run(req: ParseBuildRunReq):
     # 1) Parse (use your env override if you want to support test_today)
+    company_aliases, report_aliases = load_aliases()
     parsed = parse_nlq(
         req.query,
         company_aliases,
