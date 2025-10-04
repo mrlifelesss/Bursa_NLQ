@@ -92,7 +92,7 @@ Resources:
     Type: AWS::Serverless::Function
     Properties:
       FunctionName:
-        Fn::Sub: ${AWS::StackName}-${StackNameSuffix}-post-confirmation
+        Fn::Sub: --post-confirmation
       CodeUri: PostConfirmationRegistrationFunction
       Handler: backend.user_registration.lambdas.post_confirmation.lambda_handler
       Environment:

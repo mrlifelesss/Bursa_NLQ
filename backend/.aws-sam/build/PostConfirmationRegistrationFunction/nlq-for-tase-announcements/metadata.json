@@ -1,5 +1,0 @@
-{
-  "name": "NLQ for TASE Announcements",
-  "description": "An application in Hebrew that allows users to filter TASE company announcements using natural language queries, featuring autocomplete and a professional, data-dense interface.",
-  "requestFramePermissions": []
-}

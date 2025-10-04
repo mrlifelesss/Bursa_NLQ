@@ -1,1 +1,0 @@
-export const ENABLE_REGISTRATION_GATING = true;
