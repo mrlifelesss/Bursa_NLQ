@@ -23,6 +23,22 @@ const RegistrationPage: React.FC<RegistrationPageProps> = ({ onNavigate, lang, t
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const handleGoogleSignIn = () => {
+    const domain = import.meta.env.VITE_COGNITO_DOMAIN;
+    const clientId = import.meta.env.VITE_COGNITO_CLIENT_ID;
+    const callback = import.meta.env.VITE_COGNITO_CALLBACK_URL;
+    if (!domain || !clientId || !callback) {
+      console.error('Missing Cognito hosted UI configuration for Google sign-in', { domain, clientId, callback });
+      setError('Google sign-in is temporarily unavailable. Please try again later.');
+      return;
+    }
+    const state = encodeURIComponent(String(Date.now()));
+    const scope = encodeURIComponent('openid profile email');
+    const redirectUri = encodeURIComponent(callback);
+    const authorizeUrl = `${domain}/oauth2/authorize?identity_provider=Google&response_type=code&client_id=${clientId}&redirect_uri=${redirectUri}&scope=${scope}&state=${state}`;
+    window.location.href = authorizeUrl;
+  };
+
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
@@ -69,7 +85,7 @@ const RegistrationPage: React.FC<RegistrationPageProps> = ({ onNavigate, lang, t
           
           {/* Social Logins */}
           <div className="space-y-4">
-            <button type="button" className="w-full flex items-center justify-center gap-3 py-3 px-4 rounded-lg font-bold transition-colors bg-white text-gray-800 hover:bg-gray-200">
+            <button type="button" onClick={handleGoogleSignIn} className="w-full flex items-center justify-center gap-3 py-3 px-4 rounded-lg font-bold transition-colors bg-white text-gray-800 hover:bg-gray-200">
               <GoogleIcon className="h-6 w-6" />
               <span>{t.continueWithGoogle}</span>
             </button>
@@ -177,3 +193,7 @@ const RegistrationPage: React.FC<RegistrationPageProps> = ({ onNavigate, lang, t
 };
 
 export default RegistrationPage;
+
+
+
+
