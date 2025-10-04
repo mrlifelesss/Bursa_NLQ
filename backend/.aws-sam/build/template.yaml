@@ -94,7 +94,7 @@ Resources:
       FunctionName:
         Fn::Sub: --post-confirmation
       CodeUri: PostConfirmationRegistrationFunction
-      Handler: backend.user_registration.lambdas.post_confirmation.lambda_handler
+      Handler: user_registration.lambdas.post_confirmation.lambda_handler
       Environment:
         Variables:
           USERS_TABLE_NAME:
@@ -116,6 +116,11 @@ Resources:
           - Fn::GetAtt:
             - OrganizationsTable
             - Arn
+        - Effect: Allow
+          Action:
+          - cognito-idp:AdminAddUserToGroup
+          Resource:
+            Fn::Sub: arn:aws:cognito-idp:::userpool/
     Metadata:
       SamResourceId: PostConfirmationRegistrationFunction
   UserPool:
@@ -134,17 +139,6 @@ Resources:
       - Name: email
         Required: true
         Mutable: true
-  UserPoolInvokePermission:
-    Type: AWS::Lambda::Permission
-    Properties:
-      FunctionName:
-        Ref: PostConfirmationRegistrationFunction
-      Action: lambda:InvokeFunction
-      Principal: cognito-idp.amazonaws.com
-      SourceArn:
-        Fn::GetAtt:
-        - UserPool
-        - Arn
   UserPoolClient:
     Type: AWS::Cognito::UserPoolClient
     Properties:

@@ -1,0 +1,11 @@
+version = 0.1
+
+[default.deploy.parameters]
+stack_name = "bursa-user-registration"
+resolve_s3 = true
+s3_prefix = "bursa-user-registration"
+region = "us-east-1"
+confirm_changeset = true
+capabilities = "CAPABILITY_IAM"
+parameter_overrides = "StackNameSuffix=\"user-registration\" UsersTableName=\"UsersTable\" OrganizationsTableName=\"OrganizationsTable\" UserPoolName=\"BursaUserPool\" UserPoolClientName=\"BursaWebClient\" FreeTierGroupName=\"Free-Tier\" DefaultLanguage=\"he\" Tier1Limit=\"5\" Tier2Limit=\"3\" WelcomePeriodDays=\"30\""
+image_repositories = []
