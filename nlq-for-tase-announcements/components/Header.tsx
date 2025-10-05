@@ -10,9 +10,11 @@ interface HeaderProps {
   lang: Language;
   setLang: (lang: Language) => void;
   t: Translation['header'];
+  isAuthenticated: boolean;
+  onLogout: () => void;
 }
 
-export const Header: React.FC<HeaderProps> = ({ currentPage, onNavigate, lang, setLang, t }) => {
+export const Header: React.FC<HeaderProps> = ({ currentPage, onNavigate, lang, setLang, t, isAuthenticated, onLogout }) => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const gatingEnabled = ENABLE_REGISTRATION_GATING;
 
@@ -34,6 +36,11 @@ export const Header: React.FC<HeaderProps> = ({ currentPage, onNavigate, lang, s
     onNavigate(page);
     setIsMobileMenuOpen(false);
   }
+
+  const handleLogoutClick = () => {
+    setIsMobileMenuOpen(false);
+    onLogout();
+  };
 
   const LanguageToggle = () => (
     <div className="flex items-center text-sm font-medium text-gray-400">
@@ -78,7 +85,7 @@ export const Header: React.FC<HeaderProps> = ({ currentPage, onNavigate, lang, s
 
           <div className="hidden md:flex items-center space-x-2">
             <LanguageToggle />
-            {gatingEnabled && (
+            {gatingEnabled && !isAuthenticated && (
               <>
                 <button onClick={() => onNavigate('login')} className="text-gray-300 hover:bg-gray-700 hover:text-white px-3 py-2 rounded-md text-sm font-medium">
                   {t.login}
@@ -87,6 +94,11 @@ export const Header: React.FC<HeaderProps> = ({ currentPage, onNavigate, lang, s
                   {t.register}
                 </button>
               </>
+            )}
+            {gatingEnabled && isAuthenticated && (
+              <button onClick={handleLogoutClick} className="text-gray-300 hover:bg-gray-700 hover:text-white px-3 py-2 rounded-md text-sm font-medium">
+                {t.logout}
+              </button>
             )}
           </div>
 
@@ -126,7 +138,7 @@ export const Header: React.FC<HeaderProps> = ({ currentPage, onNavigate, lang, s
             <div className="px-3 mb-3">
               <LanguageToggle />
             </div>
-            {gatingEnabled && (
+            {gatingEnabled && !isAuthenticated && (
               <div className="flex flex-col items-start space-y-3 px-3">
                  <button onClick={() => handleNav('login')} className={`text-gray-300 hover:bg-gray-700 hover:text-white block w-full px-3 py-2 rounded-md text-base font-medium ${lang === 'he' ? 'text-right' : 'text-left'}`}>
                   {t.login}
@@ -134,6 +146,13 @@ export const Header: React.FC<HeaderProps> = ({ currentPage, onNavigate, lang, s
                  <button onClick={() => handleNav('pricing')} className="bg-cyan-500 text-white hover:bg-cyan-600 block w-full text-center px-4 py-2 rounded-md text-base font-bold transition-colors">
                   {t.register}
                  </button>
+              </div>
+            )}
+            {gatingEnabled && isAuthenticated && (
+              <div className="flex flex-col items-start space-y-3 px-3">
+                <button onClick={handleLogoutClick} className={`text-gray-300 hover:bg-gray-700 hover:text-white block w-full px-3 py-2 rounded-md text-base font-medium ${lang === 'he' ? 'text-right' : 'text-left'}`}>
+                  {t.logout}
+                </button>
               </div>
             )}
           </div>
